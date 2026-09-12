@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vehicle Info — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="panel">
+        <div class="helper-note" style="margin-bottom:18px;">
+          Your vehicle's basic details were captured during profile setup — anything you change here updates your official record.
+        </div>
+
+        <form id="vehicle-form">
+          <div class="grid-2">
+            <div>
+              <div class="panel-title">Vehicle</div>
+              <div class="field"><label>Vehicle name / registration number</label><input type="text" id="v-name" /></div>
+              <div class="field"><label>Insurance expiry date</label><input type="date" id="v-insuranceDate" /></div>
+              <div class="field"><label>FC (Fitness Certificate) expiry date</label><input type="date" id="v-fcDate" /></div>
+              <div class="field"><label>Last service date</label><input type="date" id="v-lastServiceDate" /></div>
+              <div class="field"><label>Wheel air condition</label>
+                <select id="v-wheelAirCondition">
+                  <option value="">Select</option><option>Good</option><option>Needs check</option><option>Low</option>
+                </select>
+              </div>
+              <div class="field"><label>Backup wheel available</label>
+                <select id="v-backupWheel"><option value="">Select</option><option>Yes</option><option>No</option></select>
+              </div>
+              <div class="field"><label>Tool kit</label>
+                <select id="v-toolKit"><option value="">Select</option><option>Complete</option><option>Partial</option><option>Missing</option></select>
+              </div>
+              <div class="field"><label>Fuel type</label>
+                <select id="v-fuelType"><option value="">Select</option><option>Diesel</option><option>Petrol</option><option>CNG</option><option>Electric</option></select>
+              </div>
+              <div class="field">
+                <label>RC book / insurance document</label>
+                <div class="field-file"><input type="file" id="v-rcBook" accept=".pdf,.jpg,.jpeg,.png" /></div>
+                <div class="helper-note" id="rc-current"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="panel-title">Vehicle emergency medical kit</div>
+              <div class="field"><label>Oxygen cylinder</label>
+                <select id="v-oxygenCylinder"><option value="">Select</option><option>Full</option><option>Half</option><option>Empty — needs refill</option></select>
+              </div>
+              <div class="field"><label>Air valves</label>
+                <select id="v-airValves"><option value="">Select</option><option>Working</option><option>Needs check</option></select>
+              </div>
+              <div class="field"><label>Emergency tools</label>
+                <select id="v-emergencyTools"><option value="">Select</option><option>Complete</option><option>Partial</option></select>
+              </div>
+              <div class="field"><label>Medical kit</label>
+                <select id="v-medicalKit"><option value="">Select</option><option>Fully stocked</option><option>Needs restock</option></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="helper-note" style="margin-bottom:10px;">If any correction is needed to the information above, use the Update button.</div>
+          <button class="btn btn-primary" type="submit">Update</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'vehicle', title: 'Vehicle Info', subtitle: 'Keep your ambulance\'s readiness details up to date' });
+  if (!session) return;
+
+  const vehicle = await api('/api/driver/vehicle');
+  const fields = ['name','insuranceDate','fcDate','lastServiceDate','wheelAirCondition','backupWheel','toolKit','fuelType','oxygenCylinder','airValves','emergencyTools','medicalKit'];
+  fields.forEach(f => {
+    const el = document.getElementById(`v-${f}`);
+    if (el && vehicle[f]) el.value = vehicle[f];
+  });
+  if (vehicle.rcBookPath) {
+    document.getElementById('rc-current').innerHTML = `Current file: <a href="${window.AGNI_API_BASE || 'http://localhost:4000'}${vehicle.rcBookPath}" target="_blank">view</a>`;
+  }
+
+  document.getElementById('vehicle-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fields.forEach(f => fd.append(f, document.getElementById(`v-${f}`).value));
+    const file = document.getElementById('v-rcBook').files[0];
+    if (file) fd.append('rcBook', file);
+
+    try {
+      await api('/api/driver/vehicle', { method: 'POST', body: fd, isForm: true });
+      toast('Vehicle info updated.');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+})();
+</script>
+</body>
+</html>

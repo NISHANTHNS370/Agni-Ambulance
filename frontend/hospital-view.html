@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Incoming Case — Hospital Screen</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div style="max-width:760px; margin:60px auto; padding:0 20px;">
+  <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+    <div class="flame" style="width:44px;height:44px;border-radius:12px;background:linear-gradient(160deg,var(--ember),var(--ember-deep));display:grid;place-items:center;font-size:22px;">&#128293;</div>
+    <div>
+      <h2 style="margin:0;">Incoming ambulance case</h2>
+      <div class="helper-note">This is the receiving hospital's view — no driver login needed here.</div>
+    </div>
+  </div>
+
+  <div id="case-wrap" class="panel">
+    <div class="empty-state">Waiting for a case ID… append <code>?caseId=CASE-XXXX</code> to this page's URL, or open it from a "start route" confirmation.</div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const caseId = params.get('caseId');
+
+  async function poll() {
+    if (!caseId) return;
+    try {
+      const c = await api(`/api/emergency/hospital-view/${caseId}`);
+      document.getElementById('case-wrap').innerHTML = `
+        <div class="badge ${c.status === 'ACTIVE' ? 'badge-live' : 'badge-idle'}" style="margin-bottom:16px;">
+          ${c.status === 'ACTIVE' ? '<span class="dot-pulse"></span> En route' : 'Completed'}
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Case</label><div>${c.patientCase}</div></div>
+          <div class="field"><label>Patient age</label><div>${c.patientAge || '—'}</div></div>
+          <div class="field"><label>Accident area</label><div>${c.accidentArea || '—'}</div></div>
+          <div class="field"><label>Had alcohol / drink</label><div>${c.drinkStatus}</div></div>
+          <div class="field"><label>Additional command</label><div>${c.additionalCommand || '—'}</div></div>
+          <div class="field"><label>Started at</label><div>${new Date(c.createdAt).toLocaleString('en-IN')}</div></div>
+        </div>
+        <div class="helper-note">Case ID: ${c.caseId} · Ambulance: ${c.ambulanceId}</div>
+      `;
+    } catch (err) {
+      document.getElementById('case-wrap').innerHTML = `<div class="empty-state">Could not load case: ${err.message}</div>`;
+    }
+  }
+  poll();
+  setInterval(poll, 4000);
+</script>
+</body>
+</html>

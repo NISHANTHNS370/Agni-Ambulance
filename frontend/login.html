@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agni Ambulance — Driver Login</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/login.css" />
+</head>
+<body>
+
+<div class="login-shell">
+  <div class="login-hero">
+    <div class="flame-mark">&#128293;</div>
+    <h2>Every second on the road<br/>is a second for someone's life.</h2>
+    <p>Agni Ambulance is the driver console that connects your route, your
+       patient case, and the receiving hospital — the moment you leave the scene.</p>
+    <div class="hero-pulse-row"><span class="dot-pulse"></span> Live tracking ready</div>
+    <div class="hero-stats">
+      <div><div class="num">24/7</div><div class="lbl">Dispatch ready</div></div>
+      <div><div class="num">15+</div><div class="lbl">Partner hospitals</div></div>
+      <div><div class="num">1</div><div class="lbl">Tap to route</div></div>
+    </div>
+  </div>
+
+  <div class="login-form-side">
+    <div class="login-card">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-login" type="button">Log in</button>
+        <button class="tab-btn" id="tab-register" type="button">Create Ambulance ID</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="form-panel active" id="panel-login">
+        <h3>Driver login</h3>
+        <div class="lead">Enter your Ambulance ID and password to start your shift.</div>
+        <form id="login-form">
+          <div class="field">
+            <label>Ambulance ID</label>
+            <input type="text" id="login-ambulanceId" placeholder="e.g. TN-AMB-1042" required />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" required />
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+        </form>
+      </div>
+
+      <!-- REGISTER -->
+      <div class="form-panel" id="panel-register">
+        <h3>Create your Ambulance ID</h3>
+        <div class="lead">One-time setup. You'll fill your full profile after your first login.</div>
+        <form id="register-form">
+          <div class="field">
+            <label>Choose an Ambulance ID</label>
+            <input type="text" id="reg-ambulanceId" placeholder="e.g. TN-AMB-1042" required />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="reg-password" placeholder="At least 6 characters" required />
+          </div>
+          <div class="field">
+            <label>Confirm password</label>
+            <input type="password" id="reg-confirm" placeholder="Re-enter password" required />
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Create Ambulance ID</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const panelLogin = document.getElementById('panel-login');
+  const panelRegister = document.getElementById('panel-register');
+
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active'); tabRegister.classList.remove('active');
+    panelLogin.classList.add('active'); panelRegister.classList.remove('active');
+  });
+  tabRegister.addEventListener('click', () => {
+    tabRegister.classList.add('active'); tabLogin.classList.remove('active');
+    panelRegister.classList.add('active'); panelLogin.classList.remove('active');
+  });
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ambulanceId = document.getElementById('login-ambulanceId').value.trim();
+    const password = document.getElementById('login-password').value;
+    try {
+      await api('/api/auth/login', { method: 'POST', body: { ambulanceId, password } });
+      window.location.href = 'dashboard.html';
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ambulanceId = document.getElementById('reg-ambulanceId').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const confirmPassword = document.getElementById('reg-confirm').value;
+    try {
+      await api('/api/auth/register', { method: 'POST', body: { ambulanceId, password, confirmPassword } });
+      toast('Ambulance ID created! You can log in now.');
+      tabLogin.click();
+      document.getElementById('login-ambulanceId').value = ambulanceId;
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+</script>
+</body>
+</html>

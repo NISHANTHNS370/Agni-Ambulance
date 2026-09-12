@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Drone Status — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="panel">
+        <form id="drone-form">
+          <div class="grid-2">
+            <div>
+              <div class="field">
+                <label>Drone photo</label>
+                <div class="field-file"><input type="file" id="d-photo" accept="image/*" /></div>
+                <img id="drone-photo-preview" style="max-width:100%; margin-top:10px; border-radius:8px; display:none;" />
+              </div>
+              <div class="field"><label>Drone type</label>
+                <select id="d-type"><option value="">Select</option><option>DJI</option><option>FPV</option><option>Fixed-wing</option><option>Custom build</option></select>
+              </div>
+              <div class="field"><label>Speed limit (km/h)</label><input type="number" id="d-speedLimit" /></div>
+              <div class="field"><label>Loading weight max (kg)</label><input type="number" step="0.1" id="d-loadingWeightMax" /></div>
+              <div class="field"><label>Transmitter type</label>
+                <select id="d-transmitterType"><option value="">Select</option><option>Digital</option><option>Analog</option></select>
+              </div>
+              <div class="field"><label>Battery condition</label>
+                <select id="d-batteryCondition"><option value="">Select</option><option>Good</option><option>Needs replacement</option><option>Charging</option></select>
+              </div>
+              <div class="field"><label>Spare parts available</label>
+                <select id="d-spareParts"><option value="">Select</option><option>Yes</option><option>No</option><option>Partial</option></select>
+              </div>
+            </div>
+
+            <div>
+              <div class="field"><label>Drone name</label><input type="text" id="d-name" /></div>
+              <div class="field"><label>Organ box fitted</label>
+                <select id="d-organBox"><option value="">Select</option><option>Yes — cold chain box</option><option>No</option></select>
+              </div>
+              <div class="field"><label>Controller</label><input type="text" id="d-controller" placeholder="e.g. Pixhawk / DJI RC" /></div>
+              <div class="field"><label>Pilot</label><input type="text" id="d-pilot" placeholder="Assigned pilot name" /></div>
+              <div class="field"><label>Testing level</label>
+                <select id="d-testingLevel"><option value="">Select</option><option>Certified for field use</option><option>Under testing</option><option>Not yet tested</option></select>
+              </div>
+              <div class="field"><label>GPS</label>
+                <select id="d-gps"><option value="">Select</option><option>Locked / Active</option><option>Searching</option><option>Not available</option></select>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit">Update drone status</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'drone', title: 'Drone Status', subtitle: 'Your rooftop docking drone\'s readiness details' });
+  if (!session) return;
+
+  const drone = await api('/api/driver/drone');
+  const fields = ['type','speedLimit','loadingWeightMax','transmitterType','batteryCondition','spareParts','name','organBox','controller','pilot','testingLevel','gps'];
+  fields.forEach(f => {
+    const el = document.getElementById(`d-${f}`);
+    if (el && drone[f]) el.value = drone[f];
+  });
+  if (drone.photoPath) {
+    const img = document.getElementById('drone-photo-preview');
+    img.src = `${window.AGNI_API_BASE || 'http://localhost:4000'}${drone.photoPath}`;
+    img.style.display = 'block';
+  }
+
+  document.getElementById('drone-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fields.forEach(f => fd.append(f, document.getElementById(`d-${f}`).value));
+    const file = document.getElementById('d-photo').files[0];
+    if (file) fd.append('dronePhoto', file);
+
+    try {
+      await api('/api/driver/drone', { method: 'POST', body: fd, isForm: true });
+      toast('Drone status updated.');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="panel">
+        <form id="profile-form">
+          <div class="grid-2" style="grid-template-columns: 220px 1fr; gap:32px;">
+            <div style="text-align:center;">
+              <div id="photo-circle" style="width:180px; height:180px; border-radius:50%; border:2px dashed var(--border); margin:0 auto 14px; display:grid; place-items:center; overflow:hidden; background:var(--panel-alt);">
+                <span id="photo-placeholder" style="color:var(--text-muted); font-size:13px;">Photo</span>
+                <img id="photo-img" style="width:100%; height:100%; object-fit:cover; display:none;" />
+              </div>
+              <div class="field-file" style="justify-content:center;">
+                <input type="file" id="p-photo" accept="image/*" />
+              </div>
+              <div class="field" style="margin-top:16px; text-align:left;">
+                <label>Aadhaar number</label>
+                <input type="text" id="p-aadharNumber" placeholder="XXXX XXXX XXXX" />
+              </div>
+              <div class="field" style="text-align:left;">
+                <label>Experience (years)</label>
+                <input type="number" id="p-experience" />
+              </div>
+            </div>
+
+            <div>
+              <div class="field"><label>Name</label><input type="text" id="p-name" required /></div>
+              <div class="field"><label>E-mail</label><input type="email" id="p-email" /></div>
+              <div class="grid-2">
+                <div class="field"><label>Mobile</label><input type="tel" id="p-mobile" /></div>
+                <div class="field"><label>Phone number</label><input type="tel" id="p-phone" /></div>
+              </div>
+              <div class="field"><label>Address</label><textarea id="p-address"></textarea></div>
+              <div class="field"><label>Licence details</label><input type="text" id="p-licenceDetails" placeholder="Licence number & class" /></div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" type="submit" style="margin-top:8px;">Update profile</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'profile', title: 'Profile', subtitle: 'Your driver identity and licence details' });
+  if (!session) return;
+
+  const profile = await api('/api/driver/profile');
+  const fields = ['name','email','mobile','phone','address','aadharNumber','experience','licenceDetails'];
+  fields.forEach(f => {
+    const el = document.getElementById(`p-${f}`);
+    if (el && profile[f]) el.value = profile[f];
+  });
+  if (profile.photoPath) {
+    document.getElementById('photo-img').src = `${window.AGNI_API_BASE || 'http://localhost:4000'}${profile.photoPath}`;
+    document.getElementById('photo-img').style.display = 'block';
+    document.getElementById('photo-placeholder').style.display = 'none';
+  }
+
+  document.getElementById('p-photo').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      document.getElementById('photo-img').src = reader.result;
+      document.getElementById('photo-img').style.display = 'block';
+      document.getElementById('photo-placeholder').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fields.forEach(f => fd.append(f, document.getElementById(`p-${f}`).value));
+    const file = document.getElementById('p-photo').files[0];
+    if (file) fd.append('photo', file);
+
+    try {
+      await api('/api/driver/profile', { method: 'POST', body: fd, isForm: true });
+      toast('Profile updated.');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+})();
+</script>
+</body>
+</html>

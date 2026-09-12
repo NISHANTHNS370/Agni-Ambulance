@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Location Tracking & Signal Access — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="css/location.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="panel">
+        <div class="map-toolbar">
+          <select id="hospital-target">
+            <option value="">Hospital name or code…</option>
+          </select>
+          <button class="btn btn-go" id="start-route-btn" type="button">Start</button>
+        </div>
+
+        <div class="location-grid">
+          <div>
+            <div id="map"></div>
+            <div class="helper-note" id="route-status" style="margin-top:10px;">Waiting for GPS…</div>
+          </div>
+
+          <div class="panel signal-panel" style="padding:18px;">
+            <div class="panel-title">Near Traffic Signal Alert Board & Light</div>
+
+            <div class="field">
+              <label>Traffic signal / LED board</label>
+              <select id="board-select">
+                <option>NODE-001 — Anna Salai Junction</option>
+                <option>NODE-002 — Kilpauk Signal</option>
+                <option>NODE-003 — Poonamallee High Road</option>
+                <option>NODE-004 — Avadi Bypass</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>LED board command</label>
+              <select id="command-select">
+                <option>Ambulance coming, please go left</option>
+                <option>Emergency vehicle ahead — clear the lane</option>
+                <option>All vehicles please give way</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Signal light</label>
+              <label class="light-option"><input type="radio" name="light" value="green" /><span class="light-dot green"></span> Green</label>
+              <label class="light-option"><input type="radio" name="light" value="red" /><span class="light-dot red"></span> Red</label>
+              <label class="light-option"><input type="radio" name="light" value="none" checked /><span class="light-dot none"></span> None</label>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="submit-signal-btn" type="button">Submit</button>
+            <button class="btn btn-outline btn-block" id="clear-signal-btn" type="button" style="margin-top:8px;">Clear the alert (reset to default)</button>
+
+            <div class="helper-note" style="margin-top:12px;">
+              Demo only — this simulates the V2X panel; no physical traffic hardware is wired to this prototype yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+let map, driverMarker, hospitalMarker, directionsRenderer, directionsService;
+let activeCase = null;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 13.0827, lng: 80.2707 }, // Chennai default
+    zoom: 12,
+    styles: MAP_DARK_STYLE,
+    disableDefaultUI: false,
+  });
+  directionsService = new google.maps.DirectionsService();
+  directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: false });
+  boot();
+}
+
+async function boot() {
+  const session = await initShell({ active: 'location', title: 'Location Tracking & Signal Access', subtitle: 'Live GPS + route to the receiving hospital' });
+  if (!session) return;
+
+  const hospitals = await api('/api/hospitals');
+  const targetSelect = document.getElementById('hospital-target');
+  targetSelect.innerHTML = `<option value="">Hospital name or code…</option>` +
+    hospitals.map(h => `<option value="${h.hospitalId}">${h.name}</option>`).join('');
+
+  activeCase = await api('/api/emergency/active');
+  if (activeCase) {
+    targetSelect.value = activeCase.hospital.hospitalId;
+    document.getElementById('route-status').textContent = `Active trip: ${activeCase.patientCase} → ${activeCase.hospital.name}`;
+  }
+
+  trackLiveLocation(hospitals);
+  wireSignalPanel();
+  if (activeCase) loadSignalStatus(activeCase.caseId);
+}
+
+function trackLiveLocation(hospitals) {
+  if (!navigator.geolocation) {
+    document.getElementById('route-status').textContent = 'Geolocation not supported on this device.';
+    return;
+  }
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      if (!driverMarker) {
+        driverMarker = new google.maps.Marker({
+          map, position: here, title: 'Ambulance (you)',
+          icon: { path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#ff7a29', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+        });
+        map.setCenter(here);
+      } else {
+        driverMarker.setPosition(here);
+      }
+    },
+    () => { document.getElementById('route-status').textContent = 'Could not read GPS — check location permission.'; },
+    { enableHighAccuracy: true, maximumAge: 5000 }
+  );
+
+  document.getElementById('start-route-btn').addEventListener('click', () => {
+    const hospitalId = document.getElementById('hospital-target').value;
+    const hospital = hospitals.find(h => h.hospitalId === hospitalId);
+    if (!hospital) return toast('Select a hospital first.', 'error');
+    routeTo(hospital);
+  });
+
+  if (activeCase) {
+    setTimeout(() => routeTo(activeCase.hospital), 800);
+  }
+}
+
+function routeTo(hospital) {
+  if (!driverMarker) return toast('Still acquiring your GPS position…', 'error');
+  const origin = driverMarker.getPosition();
+  const destination = { lat: hospital.lat, lng: hospital.lng };
+
+  directionsService.route(
+    { origin, destination, travelMode: google.maps.TravelMode.DRIVING },
+    (result, status) => {
+      if (status === 'OK') {
+        directionsRenderer.setDirections(result);
+        const leg = result.routes[0].legs[0];
+        document.getElementById('route-status').textContent =
+          `Routing to ${hospital.name} — ${leg.distance.text}, ETA ${leg.duration.text}`;
+      } else {
+        document.getElementById('route-status').textContent = `Could not compute route (${status}).`;
+      }
+    }
+  );
+}
+
+function wireSignalPanel() {
+  document.getElementById('submit-signal-btn').addEventListener('click', async () => {
+    if (!activeCase) return toast('No active trip to send a signal for. Start one on the Emergency page.', 'error');
+    const boardId = document.getElementById('board-select').value;
+    const command = document.getElementById('command-select').value;
+    const light = document.querySelector('input[name="light"]:checked').value;
+    try {
+      await api('/api/signal/command', { method: 'POST', body: { caseId: activeCase.caseId, boardId, command, light } });
+      toast('Signal command sent to the board.');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+
+  document.getElementById('clear-signal-btn').addEventListener('click', async () => {
+    if (!activeCase) return;
+    await api(`/api/signal/clear/${activeCase.caseId}`, { method: 'POST' });
+    document.querySelector('input[name="light"][value="none"]').checked = true;
+    toast('Alert cleared — board reset to default.');
+  });
+}
+
+async function loadSignalStatus(caseId) {
+  const status = await api(`/api/signal/status/${caseId}`);
+  if (status.light && status.light !== 'none') {
+    const radio = document.querySelector(`input[name="light"][value="${status.light}"]`);
+    if (radio) radio.checked = true;
+  }
+}
+
+// A muted, low-saturation dark map style so the ember-orange driver marker
+// and route line stay the highest-contrast thing on screen.
+const MAP_DARK_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#1b2029' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1b2029' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8b93a3' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#262d3b' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2a3040' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#141822' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#1f2530' }] },
+];
+</script>
+
+<!-- 
+  Replace YOUR_GOOGLE_MAPS_API_KEY below with a real key (Maps JavaScript API
+  + Directions API enabled). See DEPLOYMENT_GUIDE.md for how to generate one.
+-->
+<script async defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDrel0EyjmQGIC9KqU0oHucl_jg6O7CZ_E&callback=initMap">
+</script>
+</body>
+</html>

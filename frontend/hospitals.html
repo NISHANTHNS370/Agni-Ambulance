@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hospital List — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-title">Hospital list — Chennai &amp; Thiruvallur</div>
+          <div class="field">
+            <label>Select or search a hospital</label>
+            <select id="hospital-select" size="12" style="height:340px;">
+              <option value="">Loading…</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-block" id="view-btn" type="button">View details</button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">Details of selected hospital</div>
+          <div id="details-wrap">
+            <div class="empty-state">Select a hospital and press "View details".</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'hospitals', title: 'Hospital List', subtitle: 'Directory of partner hospitals across Chennai & Thiruvallur' });
+  if (!session) return;
+
+  let hospitals = [];
+  let myLat = null, myLng = null;
+
+  navigator.geolocation && navigator.geolocation.getCurrentPosition((pos) => {
+    myLat = pos.coords.latitude; myLng = pos.coords.longitude;
+  });
+
+  async function load() {
+    const query = myLat ? `?lat=${myLat}&lng=${myLng}` : '';
+    hospitals = await api(`/api/hospitals${query}`);
+    const select = document.getElementById('hospital-select');
+    select.innerHTML = hospitals.map(h => `<option value="${h.hospitalId}">${h.name} — ${h.area}</option>`).join('');
+  }
+  await load();
+
+  document.getElementById('view-btn').addEventListener('click', () => {
+    const id = document.getElementById('hospital-select').value;
+    const h = hospitals.find(x => x.hospitalId === id);
+    const wrap = document.getElementById('details-wrap');
+    if (!h) {
+      wrap.innerHTML = `<div class="empty-state">Select a hospital first.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <div class="field"><label>Hospital name</label><div>${h.name}</div></div>
+      <div class="field"><label>Contact number</label><div>${h.contactNumber}</div></div>
+      <div class="field"><label>Another number</label><div>${h.altNumber}</div></div>
+      <div class="field"><label>Location area</label><div>${h.area}</div></div>
+      <div class="field"><label>Distance from you</label><div>${h.distanceKm !== undefined ? h.distanceKm + ' km' : 'Enable location to calculate'}</div></div>
+      <div class="helper-note">Contact numbers shown are demo placeholders — replace with verified hospital lines before real-world use.</div>
+    `;
+  });
+})();
+</script>
+</body>
+</html>

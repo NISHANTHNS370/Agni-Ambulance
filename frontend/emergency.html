@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Emergency — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+
+      <div class="panel" id="active-trip-banner" style="display:none; border-color: var(--signal-green); background: var(--signal-green-tint); margin-bottom:18px;">
+        <strong style="color:var(--signal-green);">A trip is already active.</strong>
+        <span id="active-trip-text"></span>
+        — go to <a href="location.html">Location Tracking</a> to follow the route, or
+        <button class="btn btn-outline" id="complete-trip-btn" type="button" style="margin-left:8px;">Mark trip complete</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Emergency Hospital Route</div>
+        <form id="emergency-form">
+          <div class="grid-3">
+            <div class="field">
+              <label>Select the hospital</label>
+              <input type="text" id="hospital-search" placeholder="Search hospital name or area…" style="margin-bottom:8px;" />
+              <select id="hospital-select" required>
+                <option value="">Loading hospitals…</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Patient case</label>
+              <select id="patient-case" required>
+                <option value="">Select case type</option>
+                <option>Accident case</option>
+                <option>Critical Care Patient</option>
+                <option>Pregnant Woman</option>
+                <option>Cardiac Emergency</option>
+                <option>Organ Transport</option>
+                <option>Burn Injury</option>
+                <option>Trauma</option>
+                <option>Poisoning</option>
+                <option>Respiratory Distress</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Live time</label>
+              <input type="text" id="live-time" readonly />
+            </div>
+          </div>
+
+          <div class="panel-title" style="margin-top:6px;">Patient details</div>
+          <div class="grid-3">
+            <div class="field">
+              <label>Age</label>
+              <select id="patient-age" required>
+                <option value="">Select age range</option>
+                <option>0 to 17</option>
+                <option>18 to 27</option>
+                <option>28 to 40</option>
+                <option>41 to 57</option>
+                <option>58 and above</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Accident area</label>
+              <input type="text" id="accident-area" placeholder="e.g. Anna Salai near Gemini Flyover" />
+            </div>
+            <div class="field">
+              <label>Had alcohol / drink</label>
+              <div class="radio-row" style="margin-top:12px;">
+                <label><input type="radio" name="drink" value="yes" /> Yes</label>
+                <label><input type="radio" name="drink" value="no" checked /> No</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Additional command (optional)</label>
+            <textarea id="additional-command" placeholder="Any extra instructions for the hospital or route…"></textarea>
+          </div>
+
+          <button class="btn btn-go btn-block" type="submit" style="margin-top:6px; font-size:16px; padding:16px;">
+            Connect and start the Ambulance Route
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'emergency', title: 'Emergency', subtitle: 'Log the case and start routing to the hospital' });
+  if (!session) return;
+
+  function tickLiveTime() {
+    document.getElementById('live-time').value = new Date().toLocaleTimeString('en-IN');
+  }
+  tickLiveTime();
+  setInterval(tickLiveTime, 1000);
+
+  let hospitals = [];
+  async function loadHospitals(query) {
+    hospitals = await api(`/api/hospitals${query ? '?search=' + encodeURIComponent(query) : ''}`);
+    const select = document.getElementById('hospital-select');
+    select.innerHTML = hospitals.length
+      ? hospitals.map(h => `<option value="${h.hospitalId}">${h.name} — ${h.area}</option>`).join('')
+      : `<option value="">No hospitals found</option>`;
+  }
+  loadHospitals();
+
+  let searchDebounce;
+  document.getElementById('hospital-search').addEventListener('input', (e) => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => loadHospitals(e.target.value), 250);
+  });
+
+  async function checkActiveTrip() {
+    const active = await api('/api/emergency/active');
+    const banner = document.getElementById('active-trip-banner');
+    if (active) {
+      banner.style.display = 'block';
+      document.getElementById('active-trip-text').textContent = ` ${active.patientCase} → ${active.hospital.name}`;
+      window.__activeCase = active;
+    } else {
+      banner.style.display = 'none';
+      window.__activeCase = null;
+    }
+  }
+  checkActiveTrip();
+
+  document.getElementById('complete-trip-btn').addEventListener('click', async () => {
+    if (!window.__activeCase) return;
+    const km = prompt('Distance traveled for this trip (km)?', '0');
+    if (km === null) return;
+    try {
+      await api(`/api/emergency/${window.__activeCase.caseId}/complete`, { method: 'POST', body: { distanceKm: parseFloat(km) || 0 } });
+      toast('Trip marked complete.');
+      checkActiveTrip();
+    } catch (err) { toast(err.message, 'error'); }
+  });
+
+  document.getElementById('emergency-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const hospitalId = document.getElementById('hospital-select').value;
+    const patientCase = document.getElementById('patient-case').value;
+    const patientAge = document.getElementById('patient-age').value;
+    const accidentArea = document.getElementById('accident-area').value.trim();
+    const drinkStatus = document.querySelector('input[name="drink"]:checked').value;
+    const additionalCommand = document.getElementById('additional-command').value.trim();
+
+    if (!hospitalId || !patientCase || !patientAge) {
+      return toast('Please select hospital, patient case, and age.', 'error');
+    }
+
+    try {
+      const result = await api('/api/emergency', {
+        method: 'POST',
+        body: { hospitalId, patientCase, patientAge, drinkStatus, accidentArea, additionalCommand },
+      });
+      console.log('Hospital-facing demo screen for this trip:', `hospital-view.html?caseId=${result.case.caseId}`);
+      toast('Route started! Redirecting to live location…');
+      setTimeout(() => { window.location.href = 'location.html'; }, 900);
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  });
+})();
+</script>
+</body>
+</html>

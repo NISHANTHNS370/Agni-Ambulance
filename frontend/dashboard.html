@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — Agni Ambulance</title>
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar" id="topbar"></header>
+
+    <div class="content">
+      <div class="panel" id="welcome-panel">
+        <h2 id="welcome-name">Welcome back</h2>
+        <div class="helper-note" id="today-date-note">—</div>
+      </div>
+
+      <div class="grid-3" style="margin-top:18px;">
+        <div class="stat-card">
+          <div class="stat-label">Total number of cases</div>
+          <div class="stat-value" id="stat-total-cases">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">No. of KM traveled</div>
+          <div class="stat-value" id="stat-km">0 km</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Today's cases</div>
+          <div class="stat-value" id="stat-today-count">0</div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:18px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div class="panel-title" style="margin-bottom:0;">Today's case types</div>
+          <button class="btn btn-outline" id="history-btn" type="button">View history</button>
+        </div>
+        <div id="case-types-wrap" style="margin-top:16px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- History modal -->
+<div id="history-modal" style="position:fixed; inset:0; background:rgba(0,0,0,0.55); display:none; place-items:center; z-index:100;">
+  <div class="panel" style="width:min(720px, 92vw); max-height:80vh; overflow:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <h3 style="margin:0;">Yesterday & earlier — completed cases</h3>
+      <button class="btn btn-outline" id="close-history-btn" type="button">Close</button>
+    </div>
+    <div id="history-table-wrap"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/sidebar.js"></script>
+<script>
+(async function () {
+  const session = await initShell({ active: 'dashboard', title: 'Dashboard', subtitle: 'Today\'s activity at a glance' });
+  if (!session) return;
+
+  async function loadStats() {
+    const stats = await api('/api/dashboard/stats');
+    document.getElementById('welcome-name').textContent = `Welcome, ${stats.name}`;
+    document.getElementById('today-date-note').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+    document.getElementById('stat-total-cases').textContent = stats.totalCases;
+    document.getElementById('stat-km').textContent = `${stats.kmTraveled.toFixed(1)} km`;
+    document.getElementById('stat-today-count').textContent = stats.todayCaseCount;
+
+    const wrap = document.getElementById('case-types-wrap');
+    if (stats.todayCaseTypes.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">No cases attended yet today. Once you start an emergency trip, it'll show up here.</div>`;
+    } else {
+      wrap.innerHTML = `<div class="grid-3">${stats.todayCaseTypes.map(t => `
+        <div class="stat-card">
+          <div class="stat-label">${t.type}</div>
+          <div class="stat-value" style="font-size:22px;">${t.count}</div>
+        </div>`).join('')}</div>`;
+    }
+  }
+
+  document.getElementById('history-btn').addEventListener('click', async () => {
+    const modal = document.getElementById('history-modal');
+    modal.style.display = 'grid';
+    const history = await api('/api/emergency/history/list');
+    const wrap = document.getElementById('history-table-wrap');
+    if (history.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">No completed trips yet.</div>`;
+      return;
+    }
+    wrap.innerHTML = `
+      <table class="table">
+        <thead><tr><th>Date</th><th>Case</th><th>Hospital</th><th>Distance</th></tr></thead>
+        <tbody>
+          ${history.map(h => `
+            <tr>
+              <td>${new Date(h.completedAt).toLocaleString('en-IN')}</td>
+              <td>${h.patientCase}</td>
+              <td>${h.hospital.name}</td>
+              <td>${h.distanceKm ? h.distanceKm.toFixed(1) + ' km' : '—'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+  });
+
+  document.getElementById('close-history-btn').addEventListener('click', () => {
+    document.getElementById('history-modal').style.display = 'none';
+  });
+
+  loadStats();
+})();
+</script>
+</body>
+</html>
