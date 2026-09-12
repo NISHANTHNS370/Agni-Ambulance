@@ -1,0 +1,250 @@
+{
+  "drivers": {
+    "TN18J4902": {
+      "ambulanceId": "TN18J4902",
+      "passwordHash": "bc7a84819fa1f9306a086e7c98aebea3:e4c3c8ddcf24ca157e90a4a2d135b33bc914ac6b9d1627842ea73ec5ee6e254b29a311632d4e0fbc7d912b76580fe6f1819a0d9263370861a06a885a423aadb2",
+      "createdAt": "2026-09-12T02:48:50.703Z",
+      "profile": {
+        "name": "Nishanth B",
+        "email": "nishanthrto2004@outlook.com",
+        "mobile": "09789069913",
+        "phone": "9597487116",
+        "address": "no/57, Vasanthi Shop,MTC Nagar, Periyapalayam, SD- Uthukottai , Thiruvallur-601102",
+        "aadharNumber": "87488866698787",
+        "experience": "6",
+        "licenceDetails": "6444 8872 6887",
+        "photoPath": "/uploads/TN18J4902-photo-1789181865304.jpg"
+      },
+      "vehicle": {
+        "name": "Travals RDX",
+        "insuranceDate": "2027-11-24",
+        "fcDate": "2028-12-11",
+        "lastServiceDate": "2026-08-28",
+        "wheelAirCondition": "Good",
+        "backupWheel": "Yes",
+        "toolKit": "Complete",
+        "fuelType": "Diesel",
+        "medicalKit": "Fully stocked",
+        "oxygenCylinder": "Full",
+        "airValves": "Working",
+        "emergencyTools": "Complete",
+        "rcBookPath": "/uploads/TN18J4902-rcBook-1789181676263.jpeg"
+      },
+      "drone": {
+        "name": "NS speedbee",
+        "type": "FPV",
+        "speedLimit": "210",
+        "loadingWeightMax": "2",
+        "transmitterType": "Digital",
+        "batteryCondition": "Good",
+        "spareParts": "Yes",
+        "organBox": "Yes — cold chain box",
+        "controller": "DJI RC NS",
+        "pilot": "Nishanth NS",
+        "testingLevel": "Certified for field use",
+        "gps": "Locked / Active",
+        "photoPath": "/uploads/TN18J4902-dronePhoto-1789182079971.webp"
+      },
+      "settings": {
+        "homeLat": null,
+        "homeLng": null,
+        "locationSharing": true
+      },
+      "stats": {
+        "totalCases": 1,
+        "kmTraveled": 16
+      }
+    }
+  },
+  "hospitals": [
+    {
+      "hospitalId": "HOSP-001",
+      "name": "Rajiv Gandhi Government General Hospital",
+      "area": "Park Town, Chennai",
+      "lat": 13.0844,
+      "lng": 80.2764,
+      "contactNumber": "044-2800000",
+      "altNumber": "984000000"
+    },
+    {
+      "hospitalId": "HOSP-002",
+      "name": "Government Stanley Medical College Hospital",
+      "area": "Old Washermanpet, Chennai",
+      "lat": 13.1071,
+      "lng": 80.2884,
+      "contactNumber": "044-2800137",
+      "altNumber": "984000911"
+    },
+    {
+      "hospitalId": "HOSP-003",
+      "name": "Apollo Hospitals Greams Road",
+      "area": "Thousand Lights, Chennai",
+      "lat": 13.0604,
+      "lng": 80.2545,
+      "contactNumber": "044-2800274",
+      "altNumber": "984001822"
+    },
+    {
+      "hospitalId": "HOSP-004",
+      "name": "MIOT International",
+      "area": "Manapakkam, Chennai",
+      "lat": 13.0089,
+      "lng": 80.1875,
+      "contactNumber": "044-2800411",
+      "altNumber": "984002733"
+    },
+    {
+      "hospitalId": "HOSP-005",
+      "name": "Fortis Malar Hospital",
+      "area": "Adyar, Chennai",
+      "lat": 13.0067,
+      "lng": 80.257,
+      "contactNumber": "044-2800548",
+      "altNumber": "984003644"
+    },
+    {
+      "hospitalId": "HOSP-006",
+      "name": "Sri Ramachandra Medical Centre",
+      "area": "Porur, Chennai",
+      "lat": 13.0382,
+      "lng": 80.1565,
+      "contactNumber": "044-2800685",
+      "altNumber": "984004555"
+    },
+    {
+      "hospitalId": "HOSP-007",
+      "name": "Government Kilpauk Medical College Hospital",
+      "area": "Kilpauk, Chennai",
+      "lat": 13.0776,
+      "lng": 80.2417,
+      "contactNumber": "044-2800822",
+      "altNumber": "984005466"
+    },
+    {
+      "hospitalId": "HOSP-008",
+      "name": "Institute of Child Health & Hospital for Children",
+      "area": "Egmore, Chennai",
+      "lat": 13.0762,
+      "lng": 80.2603,
+      "contactNumber": "044-2800959",
+      "altNumber": "984006377"
+    },
+    {
+      "hospitalId": "HOSP-009",
+      "name": "Sundaram Medical Foundation Hospital",
+      "area": "Shenoy Nagar, Chennai",
+      "lat": 13.0813,
+      "lng": 80.228,
+      "contactNumber": "044-2801096",
+      "altNumber": "984007288"
+    },
+    {
+      "hospitalId": "HOSP-010",
+      "name": "Global Hospitals Perumbakkam",
+      "area": "Perumbakkam, Chennai",
+      "lat": 12.8998,
+      "lng": 80.2201,
+      "contactNumber": "044-2801233",
+      "altNumber": "984008199"
+    },
+    {
+      "hospitalId": "HOSP-011",
+      "name": "Thiruvallur Government Medical College Hospital",
+      "area": "Thiruvallur Town",
+      "lat": 13.1439,
+      "lng": 79.9089,
+      "contactNumber": "044-2801370",
+      "altNumber": "984009110"
+    },
+    {
+      "hospitalId": "HOSP-012",
+      "name": "Sri Sathya Sai Medical Centre",
+      "area": "Ambattur, Thiruvallur Dist.",
+      "lat": 13.0985,
+      "lng": 80.1611,
+      "contactNumber": "044-2801507",
+      "altNumber": "984010021"
+    },
+    {
+      "hospitalId": "HOSP-013",
+      "name": "Avadi Government Hospital",
+      "area": "Avadi, Thiruvallur Dist.",
+      "lat": 13.1147,
+      "lng": 80.0982,
+      "contactNumber": "044-2801644",
+      "altNumber": "984010932"
+    },
+    {
+      "hospitalId": "HOSP-014",
+      "name": "Sri Ramakrishna Hospital Poonamallee",
+      "area": "Poonamallee, Thiruvallur Dist.",
+      "lat": 13.0489,
+      "lng": 80.0948,
+      "contactNumber": "044-2801781",
+      "altNumber": "984011843"
+    },
+    {
+      "hospitalId": "HOSP-015",
+      "name": "Tiruttani Government Hospital",
+      "area": "Tiruttani, Thiruvallur Dist.",
+      "lat": 13.1755,
+      "lng": 79.6082,
+      "contactNumber": "044-2801918",
+      "altNumber": "984012754"
+    }
+  ],
+  "emergencyCases": [
+    {
+      "caseId": "CASE-2026-50F93B",
+      "ambulanceId": "TN18J4902",
+      "hospital": {
+        "hospitalId": "HOSP-011",
+        "name": "Thiruvallur Government Medical College Hospital",
+        "area": "Thiruvallur Town",
+        "lat": 13.1439,
+        "lng": 79.9089,
+        "contactNumber": "044-2801370",
+        "altNumber": "984009110"
+      },
+      "patientCase": "Accident case",
+      "patientAge": "18 to 27",
+      "drinkStatus": "no",
+      "accidentArea": "Periyapalayam",
+      "additionalCommand": "Very serious",
+      "status": "COMPLETED",
+      "createdAt": "2026-09-12T02:51:05.058Z",
+      "completedAt": "2026-09-12T02:59:26.520Z",
+      "distanceKm": 16
+    },
+    {
+      "caseId": "CASE-2026-E1A15F",
+      "ambulanceId": "TN18J4902",
+      "hospital": {
+        "hospitalId": "HOSP-001",
+        "name": "Rajiv Gandhi Government General Hospital",
+        "area": "Park Town, Chennai",
+        "lat": 13.0844,
+        "lng": 80.2764,
+        "contactNumber": "044-2800000",
+        "altNumber": "984000000"
+      },
+      "patientCase": "Pregnant Woman",
+      "patientAge": "18 to 27",
+      "drinkStatus": "no",
+      "accidentArea": "avadi",
+      "additionalCommand": "It's emergency i need police help",
+      "status": "ACTIVE",
+      "createdAt": "2026-09-12T04:11:03.256Z",
+      "completedAt": null,
+      "distanceKm": null
+    }
+  ],
+  "signalCommands": {
+    "CASE-2026-50F93B": {
+      "boardId": "NODE-001 — Anna Salai Junction",
+      "command": "All vehicles please give way",
+      "light": "green",
+      "updatedAt": "2026-09-12T02:52:22.673Z"
+    }
+  }
+}
